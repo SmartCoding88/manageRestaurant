@@ -3,6 +3,11 @@ const { query } = require('../connection');
 const connection = require('../connection');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const { MailtrapClient } = require("mailtrap");
+const { Router } = require('express');
+
+
 require('dotenv').config();
 
 //register
@@ -86,4 +91,58 @@ router.post("/login", (req,res)=>{
     });
 });
 
+//forgot password
+// var transporter_gmail = nodemailer.createTransport({
+//     service: 'gmail',
+//     auth:{
+//         user: process.env.EMAIL,
+//         pass: process.env.PASSWORD
+//     }
+// });
+var transporter = nodemailer.createTransport({
+    host: "sandbox.smtp.mailtrap.io",
+    port: 2525,
+    auth: {
+      user: "8931b30b37788a",
+      pass: "e86b381bf81e4f"
+    }
+  });
+
+router.post("/forgotpassword",(req,res)=>{
+
+    const user = req.body;
+    forgot_query = "SELECT email, password FROM user WHERE email=?";
+    connection.query(forgot_query, [user.email], (err, results) =>{
+
+        if(!err){
+
+            if(results.length <=0 ){
+                return res.status(200).json({message: "Password sent successfully to your email"});
+            }
+            else{
+               
+                var mailOptions = {
+                    from: process.env.SENDER_EMAIL,
+                    to: results[0].email,
+                    subject: 'Password by Restaurant Management System',
+                    html: '<p><b>Your Login Details for Restaurant Management System</b><br/><b>Email:</b>'+results[0].email+'<br/><b>Password:</b>'+results[0].password+'<br/><a href="http://localhost:3000/user/login">Click here to login</a></p>'
+                };
+                transporter.sendMail(mailOptions, function(error, info){
+                    if(error){
+                        console.log(error);
+                    }else{
+                        console.log('Email Sent: '+info.response)
+                    }
+                })
+            }
+            
+        }else{
+
+            return res.status(500).json(err);
+
+        }
+
+    });
+
+})
 module.exports = router;
