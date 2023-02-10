@@ -5,7 +5,9 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { MailtrapClient } = require("mailtrap");
-const { Router } = require('express');
+
+const auth = require("../services/authentication")
+const checkRole = require("../services/checkRole");
 
 
 require('dotenv').config();
@@ -14,13 +16,13 @@ require('dotenv').config();
 router.post("/signup",(req,res)=>{
 
     let user = req.body;
-    register_query = "Select email, password, role, status from user where email=?";
+    register_query = "select email, password, role, status from user where email=?";
     connection.query(register_query, [user.email], (err,results)=>{
 
         if(!err){
 
             if(results.length <=0){
-                query = "INSERT INTO user(name, contactNumber, email, password, status, role) values(?,?,?,?,'false','user')";
+                query = "insert into user(name, contactNumber, email, password, status, role) values(?,?,?,?,'false','user')";
                 connection.query(query, [
                     user.name,
                     user.contactNumber,
@@ -56,7 +58,7 @@ router.post("/login", (req,res)=>{
 
     const user = req.body;
 
-    login_query= "SELECT email, password, role, status from user where email=?";
+    login_query= "select email, password, role, status from user where email=?";
 
     connection.query(login_query, [user.email], (err, results)=>{
 
@@ -111,7 +113,7 @@ var transporter = nodemailer.createTransport({
 router.post("/forgotpassword",(req,res)=>{
 
     const user = req.body;
-    forgot_query = "SELECT email, password FROM user WHERE email=?";
+    forgot_query = "select email, password from user where email=?";
     connection.query(forgot_query, [user.email], (err, results) =>{
 
         if(!err){
@@ -133,7 +135,9 @@ router.post("/forgotpassword",(req,res)=>{
                     }else{
                         console.log('Email Sent: '+info.response)
                     }
-                })
+                });
+
+                return res.status(200).json({message: "Password sent successfully to your email"});
             }
             
         }else{
@@ -144,5 +148,93 @@ router.post("/forgotpassword",(req,res)=>{
 
     });
 
-})
+});
+
+//get users
+router.get("/", auth.authenticateToken,checkRole.checkRole, (req, res)=>{
+
+    const users_query = "select id, name, email, contactNumber, status from user where role='user'";
+
+    connection.query(users_query, (err, results)=>{
+
+        if(!err){
+
+            return res.status(200).json(results);
+
+        }else{
+
+            return res.status(500).json(err);
+
+        }
+
+    })
+
+});
+
+//patch
+router.patch("/update", auth.authenticateToken, (req, res)=>{
+
+    let user = req.body;
+
+    const patch_query = "update user set status=? where id=?";
+    connection.query(patch_query, [user.status, user.id], (err, results)=>{
+        if(!err){
+            if(results.affectedRows == 0){
+
+                return res.status(404).json({message: "User id does not exist !"});
+
+            }
+
+            return res.status(200).json({message: "User updated successfully"});
+        }else{
+            return res.status(300).json(err);
+        }
+    })
+
+});
+
+router.get("/checkToken", auth.authenticateToken, (req,res)=>{
+    
+    return res.status(200).json({message: "true"});
+
+});
+
+router.post("/changePassword",auth.authenticateToken, (req,res)=>{
+
+    const user = req.body;
+    const email = res.locals.email;
+
+    var change_pwd_query = "select * from user where email=? and password=?";
+    connection.query(change_pwd_query, [email, user.oldPassword],(err,results)=>{
+        if(!err){
+
+            if(results.length <=0){
+                return res.status(400).json({message:"Incorrect Old Password"});
+            }else if(results[0].password == user.oldPassword){
+
+                update_query = "update user set password=? where email=?"; 
+                connection.query(update_query, [user.newPassword, email], (err, results)=>{
+
+                    if(!err){
+
+                        return res.status(200).json({message: "Password Updated Succesfully !"});
+
+                    }else{
+                        return res.status(500).json(err);
+                    }
+
+                })
+
+            }else{
+                return res.status(400).json({message: "Something went wrong. Please try later."});
+            }
+
+        }else{
+            return res.status(500).json(err);
+        }
+    })
+
+});
+
+
 module.exports = router;
