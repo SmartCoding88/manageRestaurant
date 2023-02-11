@@ -129,6 +129,30 @@ router.delete("/delete/:id",auth.authenticateToken,checkRole.checkRole,(req,res,
 
     })
 
-})
+});
+
+//update status
+router.patch("/updateStatus",auth.authenticateToken,checkRole.checkRole, (req, res, next)=>{
+
+    let product = req.body;
+    var query = "update product set status=? where id=?";
+    connection.query(query, [product.status,product.id], (err, results)=>{
+
+        if(!err){
+
+            if(results.affectedRows ==0){
+                return res.status(400).json({mesage:"Product id is not found"});
+            }
+
+            return res.status(200).json({message: "Product Status Updated successfully"});
+
+        }else{
+            return res.status(500).json(err);
+        }
+
+    })
+
+});
+
 
 module.exports = router;
