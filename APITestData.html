@@ -1,0 +1,30 @@
+<h3>http://localhost:3000/bill/generateReport</h3>
+<h6>Requires Bearer Token from login (http://localhost:3000/user/login)</h6>
+<div>
+    <pre>
+        {
+            "name":"BTeck Days",
+            "email":"admin@gmail.com",
+            "contactNumber":"12121212",
+            "paymentMethod":"Cash",
+            "totalAmount":460,
+            "productDetails":"[{\"id\":1,\"name\":\"Black Coffee\", \"price\":99, \"total\":99, \"category\":\"Coffee\", \"quantity\":\"1\" }]"
+          }
+    </pre>
+</div>
+
+<h3>http://localhost:3000/bill/getPDF</h3>
+<h6>Requires Bearer Token from login (http://localhost:3000/user/login)</h6>
+<div>
+    <pre>
+        {
+            "name":"BTeck Days",
+            "email":"admin@gmail.com",
+            "contactNumber":"12121212",
+            "paymentMethod":"Cash",
+            "totalAmount":460,
+            "productDetails":"[{\"id\":1,\"name\":\"Black Coffee\", \"price\":99, \"total\":99, \"category\":\"Coffee\", \"quantity\":\"1\" }]",
+            "uuid": "d39befe0-aa49-11ed-91ef-9db38ce018be"
+          }
+    </pre>
+</div>
